@@ -17,6 +17,10 @@ class Consultation(Base):
     chief_complaints = Column(Text, nullable=True)
     diagnosis = Column(Text, nullable=True)
     
+    # Image/Document Storage (Supabase URLs)
+    handwritten_prescription_url = Column(String, nullable=True)
+    reports = Column(Text, nullable=True) # JSON string of list of report URLs
+    
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

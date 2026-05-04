@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
@@ -9,8 +9,91 @@ from app.core.deps import get_current_user, require_role
 from app.features.auth.models import User
 from app.features.queue.models import QueueEntry, QueueStatus
 from app.features.queue.schemas import QueueEntryCreate, QueueEntryUpdate, QueueEntryResponse
+from app.core.ws_manager import manager
 
 router = APIRouter()
+
+
+@router.websocket("/ws/{clinic_id}")
+async def queue_websocket(websocket: WebSocket, clinic_id: str):
+    await manager.connect(clinic_id, websocket)
+    try:
+        while True:
+            # Keep connection alive, listen for any messages from client if needed
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(clinic_id, websocket)
+
+
+# ── CREATE ──────────────────────────────────────────────
+@router.post("/", response_model=QueueEntryResponse, status_code=status.HTTP_201_CREATED)
+async def add_to_queue(
+    data: QueueEntryCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("doctor", "receptionist")),
+):
+    """Add a patient to the queue. Token is auto-generated. Receptionist only."""
+    token = _generate_token(db, data.clinic_id)
+
+    entry = QueueEntry(
+        id=str(uuid.uuid4()),
+        clinic_id=data.clinic_id,
+        patient_id=data.patient_id,
+        token_number=token,
+        status=QueueStatus.WAITING,
+        priority=data.priority,
+        symptoms=data.symptoms,
+        bp=data.bp,
+        weight=data.weight,
+        temperature=data.temperature,
+        pulse=data.pulse,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(entry)
+    db.commit()
+    db.refresh(entry)
+    
+    # Broadcast update to all clinic devices
+    await manager.broadcast_to_clinic(data.clinic_id, {
+        "event": "QUEUE_UPDATED",
+        "message": f"New patient added: {token}",
+        "entry_id": entry.id
+    })
+    
+    return entry
+
+
+# ── UPDATE (change status / priority) ───────────────────
+@router.patch("/{entry_id}", response_model=QueueEntryResponse)
+async def update_queue_entry(
+    entry_id: str,
+    data: QueueEntryUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("doctor", "receptionist")),
+):
+    """Update a queue entry's status or priority. Doctor or receptionist."""
+    entry = db.query(QueueEntry).filter(QueueEntry.id == entry_id).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Queue entry not found")
+
+    if data.status is not None:
+        entry.status = data.status
+    if data.priority is not None:
+        entry.priority = data.priority
+
+    entry.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(entry)
+
+    # Broadcast update to all clinic devices
+    await manager.broadcast_to_clinic(entry.clinic_id, {
+        "event": "QUEUE_UPDATED",
+        "message": f"Queue status changed for token {entry.token_number}",
+        "entry_id": entry.id
+    })
+
+    return entry
 
 
 def _generate_token(db: Session, clinic_id: str) -> str:

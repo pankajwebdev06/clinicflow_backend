@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List
 import uuid
+import json
 
 from app.core.database import get_db
 from app.core.deps import require_role
 from app.features.auth.models import User
 from app.features.consultations.models import Consultation
 from app.features.consultations.schemas import ConsultationCreate, ConsultationResponse, ConsultationUpdate
+from app.utils.image_processor import compress_image
+from app.services.storage_service import storage_service
 
 router = APIRouter()
 
@@ -71,6 +74,75 @@ async def update_notes(
     for key, value in update_data.items():
         setattr(consultation, key, value)
 
+    db.commit()
+    db.refresh(consultation)
+    return consultation
+
+
+@router.post("/{consultation_id}/upload-prescription", response_model=ConsultationResponse)
+async def upload_prescription(
+    consultation_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("receptionist")),
+):
+    """Upload a handwritten prescription photo. Receptionist only."""
+    consultation = db.query(Consultation).filter(Consultation.id == consultation_id).first()
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    # 1. Read and compress image
+    content = await file.read()
+    compressed_content = compress_image(content)
+
+    # 2. Upload to Supabase
+    url = await storage_service.upload_file(
+        bucket="prescriptions",
+        file_data=compressed_content,
+        filename=f"{consultation_id}_prescription.webp"
+    )
+
+    if not url:
+        raise HTTPException(status_code=500, detail="Failed to upload image to storage")
+
+    # 3. Update database
+    consultation.handwritten_prescription_url = url
+    db.commit()
+    db.refresh(consultation)
+    return consultation
+
+
+@router.post("/{consultation_id}/upload-report", response_model=ConsultationResponse)
+async def upload_report(
+    consultation_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("receptionist")),
+):
+    """Upload a lab report photo. Receptionist only."""
+    consultation = db.query(Consultation).filter(Consultation.id == consultation_id).first()
+    if not consultation:
+        raise HTTPException(status_code=404, detail="Consultation not found")
+
+    # 1. Read and compress image
+    content = await file.read()
+    compressed_content = compress_image(content)
+
+    # 2. Upload to Supabase
+    url = await storage_service.upload_file(
+        bucket="reports",
+        file_data=compressed_content,
+        filename=f"{consultation_id}_report_{uuid.uuid4().hex[:8]}.webp"
+    )
+
+    if not url:
+        raise HTTPException(status_code=500, detail="Failed to upload image to storage")
+
+    # 3. Update database (JSON list)
+    current_reports = json.loads(consultation.reports) if consultation.reports else []
+    current_reports.append(url)
+    consultation.reports = json.dumps(current_reports)
+    
     db.commit()
     db.refresh(consultation)
     return consultation

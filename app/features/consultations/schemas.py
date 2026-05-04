@@ -9,6 +9,8 @@ class ConsultationBase(BaseModel):
     doctor_notes: Optional[str] = None
     chief_complaints: Optional[str] = None
     diagnosis: Optional[str] = None
+    handwritten_prescription_url: Optional[str] = None
+    reports: Optional[str] = None
 
 class ConsultationCreate(ConsultationBase):
     pass
@@ -17,6 +19,8 @@ class ConsultationUpdate(BaseModel):
     doctor_notes: Optional[str] = None
     chief_complaints: Optional[str] = None
     diagnosis: Optional[str] = None
+    handwritten_prescription_url: Optional[str] = None
+    reports: Optional[str] = None
 
 class ConsultationResponse(ConsultationBase):
     id: str
