@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, Text, Enum, Float, Integer
+﻿from sqlalchemy import Column, String, DateTime, Boolean, Text, Enum, Float, Integer
 from app.core.database import Base
 import enum
 from datetime import datetime
@@ -44,7 +44,7 @@ class BlogPost(Base):
 
 
 class AdminTeamMember(Base):
-    """Internal ClinicSathi team members with admin panel access."""
+    """Internal DoctorKaDost team members with admin panel access."""
     __tablename__ = "admin_team_members"
 
     id = Column(String, primary_key=True)

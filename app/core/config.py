@@ -1,16 +1,16 @@
-from pydantic_settings import BaseSettings
+﻿from pydantic_settings import BaseSettings
 from typing import Optional
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "ClinicSathi API"
+    PROJECT_NAME: str = "DoctorKaDost API"
     VERSION: str = "2.0.0"
     API_V1_STR: str = "/api/v1"
 
     # ─── Database ─────────────────────────────────────────────────────────────
     # Supabase PostgreSQL (set in .env / Render env vars)
     # Format: postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
-    DATABASE_URL: str = "sqlite:///./clinicsathi.db"
+    DATABASE_URL: str = "sqlite:///./doctorkadost.db"
 
     # ─── Security ─────────────────────────────────────────────────────────────
     SECRET_KEY: str = "CHANGE_ME_IN_PRODUCTION_USE_ENV"
@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     
     # SendGrid for Email
     SENDGRID_API_KEY: Optional[str] = None
-    SENDER_EMAIL: str = "noreply@clinicsathi.in"
+    SENDER_EMAIL: str = "noreply@doctorkadost.in"
 
     # ─── CORS ─────────────────────────────────────────────────────────────────
     # Comma-separated list of allowed origins. Set in Render env vars for production.

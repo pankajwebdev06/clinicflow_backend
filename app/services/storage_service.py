@@ -1,4 +1,4 @@
-import cloudinary
+﻿import cloudinary
 import cloudinary.uploader
 from app.core.config import settings
 
@@ -13,7 +13,7 @@ if settings.CLOUDINARY_CLOUD_NAME:
 
 class StorageService:
     @staticmethod
-    async def upload_file(file_content: bytes, filename: str, folder: str = "clinic_sathi") -> str:
+    async def upload_file(file_content: bytes, filename: str, folder: str = "doctor_kadost") -> str:
         """
         Uploads a file to Cloudinary and returns the secure URL.
         """

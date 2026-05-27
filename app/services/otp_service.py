@@ -1,4 +1,4 @@
-"""
+﻿"""
 OTP Service for SMS (Fast2SMS), WhatsApp, and Email
 """
 import os
@@ -33,7 +33,7 @@ class OTPService:
             url = "https://www.fast2sms.com/dev/bulkV2"
             payload = {
                 "route": "q",  # Quick SMS route
-                "message": f"Your ClinicSathi login OTP is: {otp}. Valid for 5 minutes. Do not share this code.",
+                "message": f"Your DoctorKaDost login OTP is: {otp}. Valid for 5 minutes. Do not share this code.",
                 "language": "english",
                 "flash": 0,
                 "numbers": phone,
@@ -93,7 +93,7 @@ class OTPService:
                 "to": phone,
                 "type": "template",
                 "template": {
-                    "name": "clinicsathi_otp",  # Create this template in Meta
+                    "name": "doctorkadost_otp",  # Create this template in Meta
                     "language": {"code": "en"},
                     "components": [
                         {
@@ -132,7 +132,7 @@ class OTPService:
         4. Add to environment: SENDGRID_API_KEY=your_key
         """
         api_key = os.getenv("SENDGRID_API_KEY")
-        sender_email = os.getenv("SENDER_EMAIL", "noreply@clinicsathi.in")
+        sender_email = os.getenv("SENDER_EMAIL", "noreply@doctorkadost.in")
         
         if not api_key:
             print("⚠️ SENDGRID_API_KEY not set. Skipping Email.")
@@ -149,16 +149,16 @@ class OTPService:
                 "personalizations": [
                     {
                         "to": [{"email": email}],
-                        "subject": "ClinicSathi Login OTP"
+                        "subject": "DoctorKaDost Login OTP"
                     }
                 ],
-                "from": {"email": sender_email, "name": "ClinicSathi"},
+                "from": {"email": sender_email, "name": "DoctorKaDost"},
                 "content": [
                     {
                         "type": "text/html",
                         "value": f"""
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                            <h2 style="color: #2563eb;">ClinicSathi Login</h2>
+                            <h2 style="color: #2563eb;">DoctorKaDost Login</h2>
                             <p>Hello {name or 'there'},</p>
                             <p>Your login OTP is:</p>
                             <div style="background: #f3f4f6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; margin: 20px 0;">
@@ -169,7 +169,7 @@ class OTPService:
                             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
                             <p style="color: #6b7280; font-size: 12px;">
                                 If you didn't request this OTP, please ignore this email.<br>
-                                ClinicSathi - Your Digital Clinic Assistant
+                                DoctorKaDost - Your Digital Clinic Assistant
                             </p>
                         </div>
                         """

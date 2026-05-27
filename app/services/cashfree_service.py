@@ -1,4 +1,4 @@
-"""
+﻿"""
 Cashfree Payment Gateway Service
 Docs: https://docs.cashfree.com/docs/payment-gateway
 
@@ -6,7 +6,7 @@ Environment Variables Required:
   CASHFREE_APP_ID   - Your Cashfree App ID
   CASHFREE_SECRET   - Your Cashfree Secret Key
   CASHFREE_ENV      - 'PROD' or 'TEST' (default: TEST)
-  FRONTEND_URL      - Frontend base URL for redirect (e.g. https://clinicsathi.vercel.app)
+  FRONTEND_URL      - Frontend base URL for redirect (e.g. https://doctorkadost.vercel.app)
 """
 
 import os
@@ -30,12 +30,12 @@ PLAN_PRICES = {
     "monthly": {
         "amount": 599.00,
         "display": "₹599/month",
-        "description": "ClinicSathi Monthly Subscription",
+        "description": "DoctorKaDost Monthly Subscription",
     },
     "annual": {
         "amount": 5599.00,
         "display": "₹5599/year (Save ₹1589!)",
-        "description": "ClinicSathi Annual Subscription",
+        "description": "DoctorKaDost Annual Subscription",
     },
 }
 
@@ -97,7 +97,7 @@ def create_payment_order(
             "customer_id": user_id,
             "customer_name": customer_name,
             "customer_phone": customer_phone,
-            "customer_email": customer_email or f"{user_id}@clinicsathi.in",
+            "customer_email": customer_email or f"{user_id}@doctorkadost.in",
         },
         "order_meta": {
             "return_url": f"{frontend_url}/subscription/success?order_id={order_id}",

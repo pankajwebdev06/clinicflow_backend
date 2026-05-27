@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+﻿from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from fastapi import Request
 from typing import Optional
@@ -218,7 +218,7 @@ async def upload_image(
         # Upload to Cloudinary
         result = cloudinary.uploader.upload(
             contents,
-            folder="clinicsathi",
+            folder="doctorkadost",
             resource_type="image",
             allowed_formats=["jpg", "jpeg", "png", "webp"],
             max_file_size=5 * 1024 * 1024,  # 5MB

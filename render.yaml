@@ -1,6 +1,6 @@
-services:
+﻿services:
   - type: web
-    name: clinicsathi-backend
+    name: doctorkadost-backend
     env: python
     region: singapore
     plan: free

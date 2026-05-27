@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Header
+﻿from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from sqlalchemy import func, cast, Date
 from typing import Optional
@@ -54,7 +54,7 @@ async def admin_login(data: dict, db: Session = Depends(get_db)):
                 id=str(uuid.uuid4()),
                 name="System Admin",
                 user_id="admin",
-                email="admin@clinicsathi.com",
+                email="admin@doctorkadost.com",
                 password_hash=hash_password("admin123"),
                 role=AdminTeamRole.SUPER_ADMIN,
                 is_active=True,

@@ -1,4 +1,4 @@
-from logging.config import fileConfig
+﻿from logging.config import fileConfig
 import os
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -21,7 +21,7 @@ from app.features.admin.models import BlogPost, AdminTeamMember, Subscription
 config = context.config
 
 # Use DATABASE_URL from environment variable if available
-if settings.DATABASE_URL and settings.DATABASE_URL != "sqlite:///./clinicsathi.db":
+if settings.DATABASE_URL and settings.DATABASE_URL != "sqlite:///./doctorkadost.db":
     # Escape special characters for configparser
     db_url = settings.DATABASE_URL.replace('%', '%%')
     config.set_main_option("sqlalchemy.url", db_url)

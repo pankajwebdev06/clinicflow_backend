@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, JSONResponse
@@ -18,7 +18,7 @@ from app.features.prescriptions.models import Prescription, PrescriptionMedicine
 from app.features.admin.models import BlogPost, AdminTeamMember, Subscription  # noqa: F401
 
 app = FastAPI(
-    title="ClinicSathi API",
+    title="DoctorKaDost API",
     version="2.0.0",
     docs_url="/api/docs",
     redoc_url="/api/redoc",
@@ -27,7 +27,7 @@ app = FastAPI(
 
 # ── CORS (MUST BE FIRST) ───────────────────────────────────────────────────
 # In production set ALLOWED_ORIGINS env var to your Vercel domain(s)
-DEFAULT_ORIGINS = "https://clinicsathi-frontend.vercel.app,https://clinic-sathi.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:3002,http://127.0.0.1:3002"
+DEFAULT_ORIGINS = "https://doctorkadost-frontend.vercel.app,https://doctor-kadost.vercel.app,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://localhost:3002,http://127.0.0.1:3002"
 
 cors_origins_str = settings.ALLOWED_ORIGINS if settings.ALLOWED_ORIGINS and settings.ALLOWED_ORIGINS != "*" else DEFAULT_ORIGINS
 origins = [o.strip() for o in cors_origins_str.split(",") if o.strip()]
@@ -168,7 +168,7 @@ async def security_headers_middleware(request: Request, call_next):
 # ── Root route ───────────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"message": "Welcome to ClinicSathi API", "docs": "/api/docs", "status": "active"}
+    return {"message": "Welcome to DoctorKaDost API", "docs": "/api/docs", "status": "active"}
 
 
 # ── Health check ─────────────────────────────────────────────────────────────
