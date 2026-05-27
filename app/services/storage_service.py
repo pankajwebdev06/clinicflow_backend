@@ -1,4 +1,4 @@
-﻿import cloudinary
+import cloudinary
 import cloudinary.uploader
 from app.core.config import settings
 

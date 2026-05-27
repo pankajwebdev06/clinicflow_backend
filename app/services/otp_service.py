@@ -1,4 +1,4 @@
-﻿"""
+"""
 OTP Service for SMS (Fast2SMS), WhatsApp, and Email
 """
 import os

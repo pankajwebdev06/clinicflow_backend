@@ -1,4 +1,4 @@
-﻿"""
+"""
 Cashfree Payment Gateway Service
 Docs: https://docs.cashfree.com/docs/payment-gateway
 
