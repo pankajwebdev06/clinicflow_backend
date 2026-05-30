@@ -26,15 +26,16 @@ CASHFREE_BASE_URL = (
 )
 
 # Subscription Pricing (INR)
+# Monthly: ₹799/mo | Annual: ₹7990/yr (2 months free = save ₹1598)
 PLAN_PRICES = {
     "monthly": {
-        "amount": 599.00,
-        "display": "₹599/month",
+        "amount": 799.00,
+        "display": "₹799/month",
         "description": "DoctorKaDost Monthly Subscription",
     },
     "annual": {
-        "amount": 5599.00,
-        "display": "₹5599/year (Save ₹1589!)",
+        "amount": 7990.00,
+        "display": "₹7990/year (2 Months Free!)",
         "description": "DoctorKaDost Annual Subscription",
     },
 }
@@ -67,6 +68,7 @@ def create_payment_order(
     customer_email: Optional[str],
     clinic_id: str,
     user_id: str,
+    amount_override: Optional[float] = None,
 ) -> dict:
     """
     Create a Cashfree payment order for a subscription.
@@ -84,7 +86,7 @@ def create_payment_order(
         raise ValueError(f"Invalid plan: {plan}. Must be 'monthly' or 'annual'.")
 
     plan_info = PLAN_PRICES[plan]
-    amount = plan_info["amount"]
+    amount = amount_override if amount_override is not None else plan_info["amount"]
 
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
@@ -196,7 +198,7 @@ def get_all_plans() -> dict:
             **PLAN_PRICES["annual"],
             "plan_key": "annual",
             "billing_cycle": "Billed once per year",
-            "savings": "Save ₹1,589 vs monthly",
-            "monthly_equivalent": round(5599 / 12, 0),
+            "savings": "2 Months Free — Save ₹1,598 vs monthly!",
+            "monthly_equivalent": round(7990 / 12, 0),
         },
     }

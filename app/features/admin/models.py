@@ -23,6 +23,42 @@ class SubscriptionStatus(str, enum.Enum):
     TRIAL = "trial"           # Free trial period
 
 
+class DiscountType(str, enum.Enum):
+    PERCENT = "percent"         # e.g. 20% off
+    FIXED = "fixed"             # e.g. ₹200 off
+    FREE_TRIAL = "free_trial"   # N days free, billing = ₹0
+
+
+class PromoCode(Base):
+    """
+    Promotional / coupon codes managed by the admin panel.
+    Supports: % discount, fixed INR discount, free trial (N days at ₹0).
+    """
+    __tablename__ = "promo_codes"
+
+    id = Column(String, primary_key=True)
+    code = Column(String(50), nullable=False, unique=True, index=True)   # e.g. "FIRST100"
+    description = Column(String(300), nullable=True)                      # Admin-facing note
+
+    discount_type = Column(Enum(DiscountType), nullable=False)            # percent | fixed | free_trial
+    discount_value = Column(Float, nullable=False)
+    # discount_value meaning per type:
+    #   percent    → e.g. 20.0  (= 20% off)
+    #   fixed      → e.g. 200.0 (= ₹200 off)
+    #   free_trial → e.g. 90.0  (= 90 days free, amount charged = ₹0)
+
+    max_uses = Column(Integer, nullable=True, default=None)  # None = unlimited
+    used_count = Column(Integer, nullable=False, default=0)
+
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_public = Column(Boolean, nullable=False, default=True)  # Show in frontend promo list?
+
+    expires_at = Column(DateTime, nullable=True, default=None)  # None = never expires
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class BlogPost(Base):
     """Blog posts created and published via the Admin CMS."""
     __tablename__ = "blog_posts"
@@ -81,8 +117,12 @@ class Subscription(Base):
     cf_order_token = Column(String(500), nullable=True)            # Payment session token
     cf_payment_status = Column(String(50), nullable=True)          # SUCCESS | FAILED | PENDING
 
+    # Promo / Coupon
+    promo_code = Column(String(50), nullable=True)                  # Code applied (if any)
+    discount_amount = Column(Float, nullable=True, default=0)       # INR discount applied
+
     # Dates
-    starts_at = Column(DateTime, nullable=True)                    # When subscription starts
-    expires_at = Column(DateTime, nullable=True)                   # When subscription expires
+    starts_at = Column(DateTime, nullable=True)                     # When subscription starts
+    expires_at = Column(DateTime, nullable=True)                    # When subscription expires
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

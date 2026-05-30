@@ -11,7 +11,7 @@ from app.core.security import create_access_token
 from app.features.auth.models import User, Clinic, UserRole
 from app.features.patients.models import Patient
 from app.features.queue.models import QueueEntry
-from app.features.admin.models import BlogPost, AdminTeamMember, AdminTeamRole
+from app.features.admin.models import BlogPost, AdminTeamMember, AdminTeamRole, PromoCode, DiscountType
 
 router = APIRouter()
 
@@ -585,3 +585,165 @@ async def remove_team_member(
     db.delete(member)
     db.commit()
     return {"message": "Member removed"}
+
+
+# ─── Promo Codes ──────────────────────────────────────────────────────────────
+
+def _promo_to_dict(p: PromoCode) -> dict:
+    return {
+        "id": p.id,
+        "code": p.code,
+        "description": p.description,
+        "discount_type": p.discount_type,
+        "discount_value": p.discount_value,
+        "max_uses": p.max_uses,
+        "used_count": p.used_count,
+        "is_active": p.is_active,
+        "is_public": p.is_public,
+        "expires_at": p.expires_at.isoformat() if p.expires_at else None,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    }
+
+
+@router.get("/promo-codes")
+async def list_promo_codes(
+    db: Session = Depends(get_db),
+    _: dict = Depends(verify_admin_token),
+):
+    """List all promo codes (admin only). Includes inactive & expired ones."""
+    promos = db.query(PromoCode).order_by(PromoCode.created_at.desc()).all()
+    return [_promo_to_dict(p) for p in promos]
+
+
+@router.post("/promo-codes", status_code=201)
+async def create_promo_code(
+    data: dict,
+    db: Session = Depends(get_db),
+    _: dict = Depends(verify_admin_token),
+):
+    """
+    Create a new promo / coupon code.
+
+    Body:
+      code          str   required  e.g. "FIRST100"
+      description   str   optional  Admin-facing note
+      discount_type str   required  "percent" | "fixed" | "free_trial"
+      discount_value float required  % value, INR value, or trial days
+      max_uses      int   optional  null = unlimited
+      is_active     bool  optional  default true
+      is_public     bool  optional  default true (show on frontend)
+      expires_at    str   optional  ISO datetime string
+    """
+    code = data.get("code", "").upper().strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="code is required.")
+
+    existing = db.query(PromoCode).filter(PromoCode.code == code).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Promo code '{code}' already exists.")
+
+    try:
+        discount_type = DiscountType(data.get("discount_type", ""))
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="discount_type must be 'percent', 'fixed', or 'free_trial'."
+        )
+
+    discount_value = float(data.get("discount_value", 0))
+    if discount_value <= 0:
+        raise HTTPException(status_code=400, detail="discount_value must be > 0.")
+
+    expires_at = None
+    if data.get("expires_at"):
+        try:
+            expires_at = datetime.fromisoformat(data["expires_at"].replace("Z", "+00:00"))
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid expires_at format. Use ISO datetime.")
+
+    promo = PromoCode(
+        id=str(uuid.uuid4()),
+        code=code,
+        description=data.get("description"),
+        discount_type=discount_type,
+        discount_value=discount_value,
+        max_uses=data.get("max_uses"),
+        used_count=0,
+        is_active=data.get("is_active", True),
+        is_public=data.get("is_public", True),
+        expires_at=expires_at,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(promo)
+    db.commit()
+    db.refresh(promo)
+    return {"id": promo.id, "code": promo.code, "message": "Promo code created successfully."}
+
+
+@router.patch("/promo-codes/{promo_id}")
+async def update_promo_code(
+    promo_id: str,
+    data: dict,
+    db: Session = Depends(get_db),
+    _: dict = Depends(verify_admin_token),
+):
+    """
+    Update a promo code. Updatable fields:
+      description, discount_value, max_uses, is_active, is_public, expires_at
+    (code and discount_type are immutable after creation)
+    """
+    promo = db.query(PromoCode).filter(PromoCode.id == promo_id).first()
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo code not found.")
+
+    for field in ("description", "discount_value", "max_uses", "is_active", "is_public"):
+        if field in data:
+            setattr(promo, field, data[field])
+
+    if "expires_at" in data:
+        if data["expires_at"] is None:
+            promo.expires_at = None
+        else:
+            try:
+                promo.expires_at = datetime.fromisoformat(
+                    data["expires_at"].replace("Z", "+00:00")
+                )
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid expires_at format.")
+
+    promo.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(promo)
+    return _promo_to_dict(promo)
+
+
+@router.patch("/promo-codes/{promo_id}/toggle")
+async def toggle_promo_code(
+    promo_id: str,
+    db: Session = Depends(get_db),
+    _: dict = Depends(verify_admin_token),
+):
+    """Toggle a promo code active/inactive instantly."""
+    promo = db.query(PromoCode).filter(PromoCode.id == promo_id).first()
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo code not found.")
+    promo.is_active = not promo.is_active
+    promo.updated_at = datetime.utcnow()
+    db.commit()
+    return {"id": promo.id, "code": promo.code, "is_active": promo.is_active}
+
+
+@router.delete("/promo-codes/{promo_id}")
+async def delete_promo_code(
+    promo_id: str,
+    db: Session = Depends(get_db),
+    _: dict = Depends(verify_admin_token),
+):
+    """Permanently delete a promo code."""
+    promo = db.query(PromoCode).filter(PromoCode.id == promo_id).first()
+    if not promo:
+        raise HTTPException(status_code=404, detail="Promo code not found.")
+    db.delete(promo)
+    db.commit()
+    return {"message": f"Promo code '{promo.code}' deleted."}
